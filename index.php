@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 // 定数宣言
 define('DB_DATABASE', 'bbs_db');	// DB名
@@ -52,7 +52,7 @@ if(	$_SERVER['REQUEST_METHOD']=='POST' &&
 		$message = str_replace("\t", ' ', $message);
 		$user = str_replace("\t", ' ', $user);
 
-		// 名前と本文をデータベースに挿入
+		// 投稿者・本文・先頭の投稿データのIDをデータベースに挿入
 		$db->exec("insert into comments (name, message, parentID) values ('$user', '$message', '$parentID')" );
 	}
 } else{
@@ -115,6 +115,7 @@ if( $_SERVER['REQUEST_METHOD'] == 'POST' &&
 			</ul>
 
 			<!--返信ボタン-->
+            <!--返信されたスレッドの先頭の投稿データのIDを付加して送ることで、その投稿がどのスレッドのものなのかを管理する-->
 			<form action="" method="post">
 				message: <input type="text" name="message">
 				user: <input type="text" name="user">
