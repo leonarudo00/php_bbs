@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 // 定数宣言
 define('DB_DATABASE', 'bbs_db');	// DB名
@@ -52,7 +52,7 @@ if(	$_SERVER['REQUEST_METHOD']=='POST' &&
 		$message = str_replace("\t", ' ', $message);
 		$user = str_replace("\t", ' ', $user);
 
-		// 投稿者・本文・先頭の投稿データのIDをデータベースに挿入
+		// 名前と本文をデータベースに挿入
 		$db->exec("insert into comments (name, message, parentID) values ('$user', '$message', '$parentID')" );
 	}
 } else{
@@ -62,6 +62,12 @@ if(	$_SERVER['REQUEST_METHOD']=='POST' &&
 if( $_SERVER['REQUEST_METHOD'] == 'POST' &&
 	$_POST['request'] == "delete" ){
 	$db->exec("delete from comments where id =". $_POST['id'] );
+}
+
+// 投稿の編集
+if( $_SERVER['REQUEST_METHOD'] == 'POST' &&
+	$_POST['request'] == "edit" ){
+	$db->exec("update comments set message = '". $_POST['message']. "' where id =". $_POST['id'] );
 }
 
 ?>
@@ -88,7 +94,7 @@ if( $_SERVER['REQUEST_METHOD'] == 'POST' &&
 
 	<!--各スレッドの先頭の投稿を取得-->
 	<?php $comments = getPosts(0);?>
-	
+
 	<h2>スレッド一覧（<?php echo count($comments); ?>件）</h2>
 	<ul>
 		<!--スレッドの先頭の投稿毎の処理-->
@@ -107,6 +113,12 @@ if( $_SERVER['REQUEST_METHOD'] == 'POST' &&
 				<?php foreach( $childPosts as $childPost){?>
 					<li><?php echo h($childPost['message']); ?>(<?php echo h($childPost['name']); ?>)</li>
 					<form action="" method="post">
+						message: <input type="text" name="message">
+						<input type="submit" value="編集">
+						<input type="hidden" name="id" value="<?php echo h($childPost['id']);?>">
+						<input type="hidden" name="request" value="edit">
+					</form>
+					<form action="" method="post">
 						<input type="submit" value="コメント削除">
 						<input type="hidden" name="id" value="<?php echo h($childPost['id']);?>">
 						<input type="hidden" name="request" value="delete">
@@ -114,8 +126,7 @@ if( $_SERVER['REQUEST_METHOD'] == 'POST' &&
 				<?php } //foreach( $childPosts as $childPost)?>
 			</ul>
 
-			<!--返信ボタン-->
-            <!--返信されたスレッドの先頭の投稿データのIDを付加して送ることで、その投稿がどのスレッドのものなのかを管理する-->
+			<!--返信フォーム-->
 			<form action="" method="post">
 				message: <input type="text" name="message">
 				user: <input type="text" name="user">
