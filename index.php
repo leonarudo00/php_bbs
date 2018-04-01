@@ -1,16 +1,19 @@
 ﻿<?php
+ini_set('display_errors', 1); // エラーログをHTMLに出力
 
 // 定数宣言
 define('DB_DATABASE', 'bbs_db');	// DB名
 define('DB_USERNAME', 'dbuser');	// ユーザ名
 define('DB_PASSWORD', 'dbuser');	// パスワード
-define('PDO_DSN', 'mysql:host=localhost;dbname=' . DB_DATABASE);	//データソース名
+define('PDO_DSN', 'mysql:host=localhost;dbname=' . DB_DATABASE . ';charset=utf8');	//データソース名
 
 $db;
 
 try{
 	// PDOオブジェクトの作成
 	$db = new PDO(PDO_DSN, DB_USERNAME, DB_PASSWORD);
+	// 静的プレースホルダを用いるようにエミュレーションを無効化
+	$db->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
 	// 例外を投げるようにエラーモードを設定
 	$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 }catch(PDOException $e){
@@ -47,14 +50,20 @@ if(	$_SERVER['REQUEST_METHOD']=='POST' &&
 	$parentID = $_POST['id'];
 
 	if($message !== ''){
-		$user = ($user === '') ? 'ななしさん' : $user;
-
 		$message = str_replace("\t", ' ', $message);
+		$user = ($user === '') ? 'ななしさん' : $user;		
 		$user = str_replace("\t", ' ', $user);
 
-		// 名前と本文をデータベースに挿入
-		$db->exec("insert into comments (name, message, parentID) values ('$user', '$message', '$parentID')" );
+		// 投稿内容をデータベースに挿入
+		$stmt = $db->prepare("insert into comments (name, message, parentID) values (:user, :message, :parentID)");
+		$stmt->bindParam(':user'    , h($user)    , PDO::PARAM_STR);
+		$stmt->bindParam(':message' , h($message) , PDO::PARAM_STR);
+		$stmt->bindParam(':parentID', h($parentID), PDO::PARAM_INT);
+		$stmt->execute();
+		//$db->exec("insert into comments (name, message, parentID) values ('$user', '$message', '$parentID')" );
 	}
+	// リダイレクト
+	header('Location: http://' . $_SERVER['HTTP_HOST'] . '/bbs/bbs_index.php');
 } else{
 }
 
@@ -67,7 +76,15 @@ if( $_SERVER['REQUEST_METHOD'] == 'POST' &&
 // 投稿の編集
 if( $_SERVER['REQUEST_METHOD'] == 'POST' &&
 	$_POST['request'] == "edit" ){
-	$db->exec("update comments set message = '". $_POST['message']. "' where id =". $_POST['id'] );
+	$stmt = $db->prepare("update comments set message = :message where id = :id");
+
+	$message = h($_POST['message']);
+	$id = h($_POST['id']);
+
+	$stmt->bindParam(':message', $message, PDO::PARAM_STR);
+	$stmt->bindParam(':id'     , $id     , PDO::PARAM_INT);
+	$stmt->execute();
+	//$db->exec("update comments set message = '". $_POST['message']. "' where id =". $_POST['id'] );
 }
 
 ?>
